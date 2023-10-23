@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 class WordCard extends StatelessWidget {
-
-  const WordCard({required this.word, required this.partOfSpeech, required this.shortDef, required this.offensive, super.key});
-
   final String word;
   final String partOfSpeech;
   final String shortDef;
   final bool offensive;
+
+  const WordCard(
+      {required this.word,
+      required this.partOfSpeech,
+      required this.shortDef,
+      required this.offensive,
+      super.key});
 
   @override
   Widget build(BuildContext context) {
