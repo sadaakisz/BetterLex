@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:word_generator/word_generator.dart';
 
+final wordGenerator = WordGenerator();
+
 Future<WordModel> fetchWord(String randomNoun) async {
   String apiKey = 'a4c7870c-de04-4b51-adab-4a2620d45e95';
   String requestUrl =
@@ -26,20 +28,28 @@ Future<WordModel> fetchWord(String randomNoun) async {
   }
 }
 
-/*Future<List<WordModel>> fetchWords() async {
-  List<WordModel> listOfWords = [];
-  final response = await http.get(Uri.parse(
-      'https://www.dictionaryapi.com/api/v3/references/thesaurus/json/umpire?key=a4c7870c-de04-4b51-adab-4a2620d45e95'));
+Future<List<WordModel>> fetchWords(String randomNoun) async {
+  List<WordModel> definitionsList = [];
+  String apiKey = 'a4c7870c-de04-4b51-adab-4a2620d45e95';
+  String requestUrl =
+      'https://www.dictionaryapi.com/api/v3/references/thesaurus/json/$randomNoun?key=$apiKey';
+  var response = await http.get(Uri.parse(requestUrl));
+  var decodedJson = jsonDecode(response.body);
   if (response.statusCode == 200) {
-    var decodedJson = jsonDecode(response.body);
-    for (var definition in decodedJson) {
-      listOfWords.add(WordModel.fromJson(definition as Map<String, dynamic>));
+    try {
+      for (var definition in decodedJson) {
+        definitionsList
+            .add(WordModel.fromJson(definition as Map<String, dynamic>));
+      }
+    } catch (_) {
+      randomNoun = decodedJson;
+      return fetchWords(randomNoun);
     }
-    return listOfWords;
+    return definitionsList;
   } else {
     throw Exception('Failed to load Word from API.');
   }
-}*/
+}
 
 Future<String> fetchBody(String randomNoun) async {
   String apiKey = 'a4c7870c-de04-4b51-adab-4a2620d45e95';
@@ -85,18 +95,20 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late Future<WordModel> futureWord;
+  late Future<List<WordModel>> futureWords;
   late Future<String> futureBody;
   late String randomNoun;
 
   @override
   void initState() {
     super.initState();
-    final wordGenerator = WordGenerator();
+
     randomNoun = wordGenerator.randomNoun();
     // randomNoun = 'in-joke';
 
     futureBody = fetchBody(randomNoun);
     futureWord = fetchWord(randomNoun);
+    futureWords = fetchWords(randomNoun);
     // TODO: Make that when fetchWord double-takes, randomNoun gets updated
     // randomNoun =
   }
@@ -113,35 +125,77 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
             Text(randomNoun),
-            FutureBuilder<WordModel>(
-              future: futureWord,
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return WordCard(
-                      word: snapshot.data!.word,
-                      partOfSpeech: snapshot.data!.partOfSpeech,
-                      shortDef: snapshot.data!.shortDef,
-                      offensive: snapshot.data!.offensive);
-                } else if (snapshot.hasError) {
-                  return Text('${snapshot.error}');
-                }
-                return const CircularProgressIndicator();
-              },
+            RefreshIndicator(
+              onRefresh: _pullRefresh,
+              child: FutureBuilder(
+                future: futureWords,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return _wordCardListView(snapshot);
+                  } else if (snapshot.hasError) {
+                    return Text('${snapshot.error}');
+                  }
+                  return const CircularProgressIndicator();
+                },
+              ),
             ),
-            FutureBuilder(
-              future: futureBody,
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return Text(snapshot.data!);
-                } else if (snapshot.hasError) {
-                  return Text('${snapshot.error}');
-                }
-                return const CircularProgressIndicator();
-              },
-            ),
+            // bodyText(),
           ],
         ),
       ),
     );
+  }
+
+  Widget _wordCardListView(AsyncSnapshot snapshot) {
+    print(snapshot);
+    if (snapshot.hasData) {
+      return ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        scrollDirection: Axis.vertical,
+        shrinkWrap: true,
+        itemCount: snapshot.data?.length,
+        itemBuilder: (context, index) {
+          return buildWordCard(snapshot.data[index]);
+        },
+      );
+    } else {
+      return const Center(
+        child: Text('Loading word'),
+      );
+    }
+  }
+
+  WordCard buildWordCard(WordModel snapshot) {
+    return WordCard(
+        word: snapshot.word,
+        partOfSpeech: snapshot.partOfSpeech,
+        shortDef: snapshot.shortDef,
+        offensive: snapshot.offensive);
+  }
+
+  FutureBuilder<String> bodyText() {
+    return FutureBuilder(
+      future: futureBody,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return Text(snapshot.data!);
+        } else if (snapshot.hasError) {
+          return Text('${snapshot.error}');
+        }
+        return const CircularProgressIndicator();
+      },
+    );
+  }
+
+  Future<void> _pullRefresh() async {
+    randomNoun = wordGenerator.randomNoun();
+    String freshBody = await fetchBody(randomNoun);
+    WordModel freshWord = await fetchWord(randomNoun);
+    List<WordModel> freshWords = await fetchWords(randomNoun);
+    setState(() {
+      futureBody = Future.value(freshBody);
+      futureWord = Future.value(freshWord);
+      futureWords = Future.value(freshWords);
+    });
   }
 }
