@@ -3,8 +3,36 @@ import 'dart:convert';
 import 'package:betterlex/models/word_model.dart';
 import 'package:betterlex/widgets/word_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'package:word_generator/word_generator.dart';
+
+/*
+Flutter Local Notifications initialization:
+*/
+
+/*void flutterLocalNotificationInit() async {
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  FlutterLocalNotificationsPlugin();
+// initialise the plugin. app_icon needs to be a added as a drawable resource to the Android head project
+  const AndroidInitializationSettings initializationSettingsAndroid =
+  AndroidInitializationSettings('app_icon');
+  const InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
+}
+
+void onDidReceiveNotificationResponse(NotificationResponse notificationResponse) async {
+  final String? payload = notificationResponse.payload;
+  if (notificationResponse.payload != null) {
+    debugPrint('notification payload: $payload');
+  }
+  await Navigator.push(
+    context,
+    MaterialPageRoute<void>(builder: (context) => SecondScreen(payload)),
+  );
+}*/
 
 final wordGenerator = WordGenerator();
 

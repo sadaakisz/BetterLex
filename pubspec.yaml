@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   http: ^1.1.0
   word_generator: ^0.4.3
+  flutter_local_notifications: ^16.1.0
 
 dev_dependencies:
   flutter_test:
