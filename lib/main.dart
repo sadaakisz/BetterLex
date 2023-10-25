@@ -147,7 +147,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _wordCardListView(AsyncSnapshot snapshot) {
-    print(snapshot);
     if (snapshot.hasData) {
       return ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
